@@ -1,0 +1,93 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Nabin's Quiz Platform</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <!-- ===== HEADER ===== -->
+    <header class="header">
+        <a href="#" class="logo" id="logoLink">🎯 Nabin's Quiz</a>
+        <nav class="navbar">
+            <button class="nav-btn active" data-screen="dashboard">🏠 Home</button>
+            <button class="nav-btn" data-screen="history">📜 History</button>
+            <button class="nav-btn theme-toggle" id="themeToggle">🌙 Dark</button>
+        </nav>
+    </header>
+
+    <!-- ===== DASHBOARD SCREEN ===== -->
+    <section class="screen active" id="dashboardScreen">
+        <div class="dashboard">
+            <div class="dashboard-hero">
+                <h1>Welcome to Nabin's Quiz!</h1>
+                <p>Test your knowledge across multiple topics. Earn points, unlock achievements and climb the leaderboard!</p>
+            </div>
+
+            <!-- Stats Bar -->
+            <div class="stats-bar">
+                <div class="stat-card">
+                    <span class="stat-icon">🏆</span>
+                    <div>
+                        <span class="stat-value" id="totalPoints">0</span>
+                        <span class="stat-label">Total Points</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">✅</span>
+                    <div>
+                        <span class="stat-value" id="totalQuizzes">0</span>
+                        <span class="stat-label">Quizzes Taken</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🎯</span>
+                    <div>
+                        <span class="stat-value" id="avgScore">0%</span>
+                        <span class="stat-label">Avg Score</span>
+                    </div>
+                </div>
+                <div class="stat-card">
+                    <span class="stat-icon">🔥</span>
+                    <div>
+                        <span class="stat-value" id="bestStreak">0</span>
+                        <span class="stat-label">Best Streak</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Achievements -->
+            <div class="section-title">🏅 Achievements</div>
+            <div class="achievements-bar" id="achievementsBar">
+                <!-- Filled dynamically -->
+            </div>
+
+            <!-- Topic Selection -->
+            <div class="section-title">📚 Choose a Topic</div>
+            <div class="difficulty-row">
+                <label>Difficulty:</label>
+                <select id="difficultySelect">
+                    <option value="easy">Easy</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="hard">Hard</option>
+                </select>
+                <label>Questions:</label>
+                <select id="questionCountSelect">
+                    <option value="5">5</option>
+                    <option value="10" selected>10</option>
+                    <option value="15">15</option>
+                </select>
+            </div>
+            <div class="topics-grid" id="topicsGrid">
+                <!-- Filled dynamically -->
+            </div>
+
+            <!-- Leaderboard -->
+            <div class="section-title">🥇 Leaderboard</div>
+            <div class="leaderboard" id="leaderboard">
+                <!-- Filled dynamically -->
+            </div>
+        </div>
+    </section>
