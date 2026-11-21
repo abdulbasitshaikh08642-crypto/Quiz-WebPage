@@ -91,3 +91,106 @@
             </div>
         </div>
     </section>
+   <!-- ===== QUIZ SCREEN ===== -->
+    <section class="screen" id="quizScreen">
+        <div class="quiz-container">
+            <div class="quiz-top-bar">
+                <button class="btn-ghost" id="quitQuizBtn">✕ Quit</button>
+                <div class="quiz-meta">
+                    <span id="quizTopicLabel">Topic</span>
+                    <span class="badge" id="quizDifficultyBadge">Medium</span>
+                </div>
+                <div class="timer-wrap">
+                    <span class="timer-icon">⏱</span>
+                    <span id="timerDisplay">30</span>s
+                </div>
+            </div>
+
+            <div class="progress-wrap">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <span id="progressLabel">1 / 10</span>
+            </div>
+
+            <div class="score-streak-bar">
+                <span>Score: <strong id="liveScore">0</strong></span>
+                <span>Streak: <strong id="liveStreak">0</strong> 🔥</span>
+                <span>Points: <strong id="livePoints">0</strong></span>
+            </div>
+
+            <div class="question-card">
+                <h2 class="question-text" id="questionText">Loading question...</h2>
+                <div class="options-grid" id="optionsGrid">
+                    <!-- Filled dynamically -->
+                </div>
+            </div>
+
+            <div class="quiz-controls">
+                <button class="btn-primary" id="nextBtn" style="display:none;">Next →</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== RESULTS SCREEN ===== -->
+    <section class="screen" id="resultsScreen">
+        <div class="results-container">
+            <h2 class="results-title" id="resultsTitle">Quiz Complete! 🎉</h2>
+
+            <div class="results-circle-wrap">
+                <div class="circular-progress" id="circularProgress">
+                    <span class="progress-value" id="progressValue">0%</span>
+                </div>
+                <p class="score-text" id="scoreText">You scored 0 out of 10</p>
+            </div>
+
+            <div class="results-stats">
+                <div class="result-stat"><span>⏱ Time Taken</span><strong id="timeTaken">0s</strong></div>
+                <div class="result-stat"><span>⭐ Points Earned</span><strong id="pointsEarned">0</strong></div>
+                <div class="result-stat"><span>🔥 Best Streak</span><strong id="resultStreak">0</strong></div>
+                <div class="result-stat"><span>📊 Difficulty</span><strong id="resultDifficulty">Medium</strong></div>
+            </div>
+
+            <!-- New Achievements -->
+            <div id="newAchievements" class="new-achievements" style="display:none;">
+                <div class="section-title">🏅 New Achievements Unlocked!</div>
+                <div id="newAchievementsList" class="achievements-bar"></div>
+            </div>
+
+            <!-- Question Breakdown -->
+            <div class="section-title">📋 Question Breakdown</div>
+            <div class="breakdown-list" id="breakdownList"></div>
+
+            <div class="results-buttons">
+                <button class="btn-secondary" id="goHomeBtn">🏠 Home</button>
+                <button class="btn-primary" id="playAgainBtn">🔄 Play Again</button>
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== HISTORY SCREEN ===== -->
+    <section class="screen" id="historyScreen">
+        <div class="history-container">
+            <h2>📜 Quiz History</h2>
+            <div class="history-filters">
+                <select id="historyTopicFilter">
+                    <option value="all">All Topics</option>
+                </select>
+                <button class="btn-danger" id="clearHistoryBtn">🗑 Clear History</button>
+            </div>
+            <div id="historyList" class="history-list">
+                <!-- Filled dynamically -->
+            </div>
+        </div>
+    </section>
+
+    <!-- ===== SCRIPTS ===== -->
+    <script src="questions.js"></script>
+    <script src="script.js"></script>
+
+    <footer class="footer">
+        <p>&copy; 2026 Nabin's Quiz Platform</p>
+    </footer>
+
+</body>
+</html>
