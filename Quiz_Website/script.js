@@ -306,3 +306,335 @@ const UIManager = {
             list.innerHTML = '<div class="history-empty">No quiz history yet. Play some quizzes! 🎮</div>';
             return;
         }
+        
+        list.innerHTML = [...filtered].reverse().map(h => {
+            const pct = Math.round((h.score / h.total) * 100);
+            const cls = pct >= 80 ? 'good' : pct >= 50 ? 'ok' : 'poor';
+            return `
+                <div class="history-item">
+                    <div class="history-meta">
+                        <span class="history-topic">${h.topicIcon} ${h.topicName}</span>
+                        <span class="history-date">${new Date(h.date).toLocaleString()}</span>
+                        <div class="history-detail">
+                            <span>⏱ ${h.timeTaken}s</span>
+                            <span>⭐ ${h.points} pts</span>
+                            <span>🔥 Streak: ${h.bestStreak}</span>
+                            <span class="badge ${h.difficulty}">${h.difficulty}</span>
+                        </div>
+                    </div>
+                    <span class="history-score-badge ${cls}">${h.score}/${h.total} · ${pct}%</span>
+                </div>
+            `;
+        }).join('');
+    },
+
+    updateHistoryFilter(history) {
+        const sel = document.getElementById('historyTopicFilter');
+        const played = [...new Map(history.map(h => [h.topicId, h])).values()];
+        sel.innerHTML = '<option value="all">All Topics</option>' +
+            played.map(h => `<option value="${h.topicId}">${h.topicIcon} ${h.topicName}</option>`).join('');
+    },
+
+    renderQuizQuestion(q, index, total, difficulty) {
+        document.getElementById('questionText').textContent = q.question;
+        document.getElementById('progressLabel').textContent = `${index + 1} / ${total}`;
+        document.getElementById('progressFill').style.width = `${((index + 1) / total) * 100}%`;
+        document.getElementById('quizTopicLabel').textContent = QuizManager.topic ? QuizManager.topic.name : '';
+        const diffBadge = document.getElementById('quizDifficultyBadge');
+        diffBadge.textContent = difficulty;
+        diffBadge.className = `badge ${difficulty}`;
+        document.getElementById('nextBtn').style.display = 'none';
+
+        const grid = document.getElementById('optionsGrid');
+        grid.innerHTML = '';
+        q.options.forEach(opt => {
+            const btn = document.createElement('button');
+            btn.className = 'option-btn';
+            btn.textContent = opt;
+            btn.addEventListener('click', () => App.handleAnswer(opt));
+            grid.appendChild(btn);
+        });
+    },
+
+    showAnswerFeedback(selectedBtn, correct, correctText) {
+        document.querySelectorAll('.option-btn').forEach(b => {
+            b.disabled = true;
+            if (b.textContent === correctText) b.classList.add('correct');
+        });
+        if (selectedBtn.textContent !== correctText) selectedBtn.classList.add('incorrect');
+        document.getElementById('nextBtn').style.display = 'inline-block';
+    },
+
+    updateLiveStats(score, streak, points) {
+        document.getElementById('liveScore').textContent = score;
+        document.getElementById('liveStreak').textContent = streak;
+        document.getElementById('livePoints').textContent = points;
+    },
+
+    updateTimer(seconds) {
+        const el = document.getElementById('timerDisplay');
+        el.textContent = seconds;
+        el.className = seconds <= 5 ? 'danger' : seconds <= 10 ? 'warning' : '';
+    },
+
+    renderResults(data, newAchievements) {
+        const pct = Math.round((data.score / data.total) * 100);
+        document.getElementById('resultsTitle').textContent =
+            pct === 100 ? 'Perfect Score! 🏆' : pct >= 80 ? 'Excellent! 🎉' : pct >= 60 ? 'Good Job! 👍' : 'Keep Practicing! 💪';
+
+        document.getElementById('scoreText').textContent = `You scored ${data.score} out of ${data.total}`;
+        document.getElementById('timeTaken').textContent = data.timeTaken + 's';
+        document.getElementById('pointsEarned').textContent = data.points;
+        document.getElementById('resultStreak').textContent = data.bestStreak;
+        document.getElementById('resultDifficulty').textContent = data.difficulty;
+
+        // Animate circular progress
+        const circle = document.getElementById('circularProgress');
+        const valEl = document.getElementById('progressValue');
+        let current = 0;
+        const interval = setInterval(() => {
+            current++;
+            valEl.textContent = current + '%';
+            circle.style.background = `conic-gradient(var(--primary) ${current * 3.6}deg, var(--bg3) 0deg)`;
+            if (current >= pct) clearInterval(interval);
+        }, 15);
+
+        // New achievements
+        const achDiv = document.getElementById('newAchievements');
+        const achList = document.getElementById('newAchievementsList');
+        if (newAchievements.length) {
+            achDiv.style.display = 'block';
+            this.renderAchievements(newAchievements.map(a => a.id), achList);
+        } else {
+            achDiv.style.display = 'none';
+        }
+
+        // Breakdown
+        document.getElementById('breakdownList').innerHTML = data.answers.map((a, i) => `
+            <div class="breakdown-item ${a.wasCorrect ? 'correct' : 'incorrect'}">
+                <div class="breakdown-q">${i + 1}. ${a.question}</div>
+                <div class="breakdown-answers">
+                    <span class="breakdown-correct">✅ ${a.correct}</span>
+                    ${!a.wasCorrect ? `<span class="breakdown-user">❌ You: ${a.selected || 'Time out'}</span>` : ''}
+                    <span>+${a.pointsEarned} pts</span>
+                </div>
+            </div>
+        `).join('');
+    },
+};
+
+// ==================== THEME MANAGER ====================
+
+const ThemeManager = {
+    init() {
+        const saved = localStorage.getItem('quizTheme') || 'dark';
+        this.apply(saved);
+    },
+
+    toggle() {
+        const current = document.documentElement.getAttribute('data-theme') || 'dark';
+        this.apply(current === 'dark' ? 'light' : 'dark');
+    },
+
+    apply(theme) {
+        document.documentElement.setAttribute('data-theme', theme);
+        localStorage.setItem('quizTheme', theme);
+        const btn = document.getElementById('themeToggle');
+        if (btn) btn.textContent = theme === 'dark' ? '☀️ Light' : '🌙 Dark';
+    },
+};
+
+// ==================== ACHIEVEMENTS CHECKER ====================
+
+function checkAchievements(data, quizResult) {
+    const unlocked = new Set(data.achievements);
+    const newOnes = [];
+
+    const check = (id) => {
+        if (!unlocked.has(id)) {
+            unlocked.add(id);
+            const a = ACHIEVEMENTS.find(a => a.id === id);
+            if (a) newOnes.push(a);
+        }
+    };
+
+    if (data.history.length >= 1) check('first_quiz');
+    if (quizResult.score === quizResult.total) check('perfect');
+    if (quizResult.avgTimePerQ < 5) check('speed_runner');
+    if (data.history.length >= 10) check('quiz_master');
+    if (quizResult.bestStreak >= 5) check('hot_streak');
+    if (data.totalPoints >= 100) check('centurion');
+    const uniqueTopics = new Set(data.history.map(h => h.topicId)).size;
+    if (uniqueTopics >= 5) check('variety');
+    if (quizResult.difficulty === 'hard' && (quizResult.score / quizResult.total) >= 0.8) check('top_scorer');
+
+    data.achievements = [...unlocked];
+    return newOnes;
+}
+
+// ==================== APP (MAIN CONTROLLER) ====================
+
+const App = {
+    data: null,
+    currentTopic: null,
+
+    init() {
+        this.data = StorageManager.load();
+        ThemeManager.init();
+        this.bindEvents();
+        UIManager.renderDashboard(this.data);
+        UIManager.showScreen('dashboardScreen');
+    },
+
+    bindEvents() {
+        // Nav buttons
+        document.querySelectorAll('.nav-btn[data-screen]').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const screen = btn.dataset.screen;
+                if (screen === 'history') {
+                    UIManager.updateHistoryFilter(this.data.history);
+                    UIManager.renderHistory(this.data.history, 'all');
+                    UIManager.showScreen('historyScreen');
+                } else {
+                    UIManager.renderDashboard(this.data);
+                    UIManager.showScreen('dashboardScreen');
+                }
+            });
+        });
+
+        document.getElementById('logoLink').addEventListener('click', (e) => {
+            e.preventDefault();
+            UIManager.renderDashboard(this.data);
+            UIManager.showScreen('dashboardScreen');
+        });
+
+        document.getElementById('themeToggle').addEventListener('click', () => ThemeManager.toggle());
+
+        // Quiz controls
+        document.getElementById('quitQuizBtn').addEventListener('click', () => {
+            QuizManager.stopTimer();
+            UIManager.renderDashboard(this.data);
+            UIManager.showScreen('dashboardScreen');
+        });
+
+        document.getElementById('nextBtn').addEventListener('click', () => this.nextQuestion());
+        document.getElementById('goHomeBtn').addEventListener('click', () => {
+            UIManager.renderDashboard(this.data);
+            UIManager.showScreen('dashboardScreen');
+        });
+        document.getElementById('playAgainBtn').addEventListener('click', () => {
+            if (this.currentTopic) this.startQuiz(this.currentTopic);
+        });
+
+        // History filter
+        document.getElementById('historyTopicFilter').addEventListener('change', (e) => {
+            UIManager.renderHistory(this.data.history, e.target.value);
+        });
+
+        document.getElementById('clearHistoryBtn').addEventListener('click', () => {
+            if (confirm('Clear all quiz history?')) {
+                this.data.history = [];
+                StorageManager.save(this.data);
+                UIManager.renderHistory(this.data.history, 'all');
+                UIManager.updateHistoryFilter(this.data.history);
+            }
+        });
+    },
+
+    async startQuiz(topic) {
+        this.currentTopic = topic;
+        const difficulty = document.getElementById('difficultySelect').value;
+        const amount = parseInt(document.getElementById('questionCountSelect').value, 10);
+
+        UIManager.showScreen('quizScreen');
+        document.getElementById('questionText').textContent = '⏳ Loading questions...';
+        document.getElementById('optionsGrid').innerHTML = '';
+        document.getElementById('nextBtn').style.display = 'none';
+
+        const ok = await QuizManager.start(topic, difficulty, amount);
+        if (!ok) {
+            document.getElementById('questionText').textContent = '❌ Failed to load questions. Try again.';
+            return;
+        }
+        this.showCurrentQuestion();
+    },
+
+    showCurrentQuestion() {
+        const q = QuizManager.currentQuestion();
+        UIManager.renderQuizQuestion(q, QuizManager.currentIndex, QuizManager.questions.length, QuizManager.difficulty);
+        UIManager.updateLiveStats(QuizManager.score, QuizManager.streak, QuizManager.points);
+        UIManager.updateTimer(TIMER_DURATION);
+
+        QuizManager.startTimer(
+            (t) => UIManager.updateTimer(t),
+            () => this.handleTimerExpiry()
+        );
+    },
+
+    handleAnswer(selected) {
+        QuizManager.stopTimer();
+        const correct = QuizManager.answer(selected);
+        const q = QuizManager.currentQuestion();
+        const selectedBtn = [...document.querySelectorAll('.option-btn')].find(b => b.textContent === selected);
+        UIManager.showAnswerFeedback(selectedBtn, correct, q.correct);
+        UIManager.updateLiveStats(QuizManager.score, QuizManager.streak, QuizManager.points);
+    },
+
+    handleTimerExpiry() {
+        // Record as unanswered
+        const q = QuizManager.currentQuestion();
+        const elapsed = TIMER_DURATION;
+        QuizManager.timePerQuestion.push(elapsed);
+        QuizManager.streak = 0;
+        QuizManager.answers.push({ question: q.question, correct: q.correct, selected: null, wasCorrect: false, pointsEarned: 0 });
+        document.querySelectorAll('.option-btn').forEach(b => {
+            b.disabled = true;
+            if (b.textContent === q.correct) b.classList.add('correct');
+        });
+        document.getElementById('nextBtn').style.display = 'inline-block';
+        UIManager.updateLiveStats(QuizManager.score, QuizManager.streak, QuizManager.points);
+    },
+
+    nextQuestion() {
+        QuizManager.next();
+        if (QuizManager.isFinished()) {
+            this.finishQuiz();
+        } else {
+            this.showCurrentQuestion();
+        }
+    },
+
+    finishQuiz() {
+        QuizManager.stopTimer();
+        const result = {
+            topicId: this.currentTopic.id,
+            topicName: this.currentTopic.name,
+            topicIcon: this.currentTopic.icon,
+            difficulty: QuizManager.difficulty,
+            score: QuizManager.score,
+            total: QuizManager.questions.length,
+            points: QuizManager.points,
+            bestStreak: QuizManager.bestStreak,
+            timeTaken: QuizManager.totalTime(),
+            avgTimePerQ: QuizManager.avgTimePerQ(),
+            answers: QuizManager.answers,
+            date: new Date().toISOString(),
+        };
+
+        this.data.history.push(result);
+        this.data.totalPoints += result.points;
+        if (result.bestStreak > this.data.bestStreak) this.data.bestStreak = result.bestStreak;
+        if (!this.data.topicsPlayed.includes(this.currentTopic.id)) {
+            this.data.topicsPlayed.push(this.currentTopic.id);
+        }
+
+        const newAchievements = checkAchievements(this.data, result);
+        StorageManager.save(this.data);
+
+        UIManager.renderResults(result, newAchievements);
+        UIManager.showScreen('resultsScreen');
+    },
+};
+
+// ==================== INIT ====================
+document.addEventListener('DOMContentLoaded', () => App.init());
